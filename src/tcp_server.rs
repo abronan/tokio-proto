@@ -60,8 +60,8 @@ pub struct TcpServerInstance<Kind, P, S> {
     shutdown_timeout: Duration,
 }
 
-impl<Kind, P> TcpServer<Kind, P> where
-    P: BindServer<Kind, TcpStream> + Send + Sync + 'static
+impl<Kind, P> TcpServer<Kind, P>
+    where P: BindServer<Kind, TcpStream> + Send + Sync + 'static
 {
     /// Starts building a server for the given protocol and address, with
     /// default configuration.
@@ -101,18 +101,20 @@ impl<Kind, P> TcpServer<Kind, P> where
     /// Start up the server, providing the given service on it.
     ///
     /// This method will block the current thread until the server is shut down.
-    pub fn serve<S>(&self, new_service: S) where
-        S: NewService + Send + Sync + 'static,
-        S::Instance: 'static,
-        P::ServiceError: 'static,
-        P::ServiceResponse: 'static,
-        P::ServiceRequest: 'static,
-        S::Request: From<P::ServiceRequest>,
-        S::Response: Into<P::ServiceResponse>,
-        S::Error: Into<P::ServiceError>,
+    pub fn serve<S>(&self, new_service: S)
+        where S: NewService + Send + Sync + 'static,
+              S::Instance: 'static,
+              P::ServiceError: 'static,
+              P::ServiceResponse: 'static,
+              P::ServiceRequest: 'static,
+              S::Request: From<P::ServiceRequest>,
+              S::Response: Into<P::ServiceResponse>,
+              S::Error: Into<P::ServiceError>
     {
-        self.bind(new_service).expect("failed to bind server")
-            .run().expect("error running server")
+        self.bind(new_service)
+            .expect("failed to bind server")
+            .run()
+            .expect("error running server")
     }
 
     /// Bind this server to its configured address, returning the instance.
@@ -125,8 +127,7 @@ impl<Kind, P> TcpServer<Kind, P> where
     /// actually bound, configure further execution options, etc. The returned
     /// server supports two methods, `run` and `run_until` which execute the
     /// server to completion and execute with a shutdown signal, respectively.
-    pub fn bind<S>(&self, new_service: S)
-                   -> io::Result<TcpServerInstance<Kind, P, Arc<S>>>
+    pub fn bind<S>(&self, new_service: S) -> io::Result<TcpServerInstance<Kind, P, Arc<S>>>
         where S: NewService + Send + Sync + 'static,
               S::Instance: 'static,
               P::ServiceError: 'static,
@@ -134,7 +135,7 @@ impl<Kind, P> TcpServer<Kind, P> where
               P::ServiceRequest: 'static,
               S::Request: From<P::ServiceRequest>,
               S::Response: Into<P::ServiceResponse>,
-              S::Error: Into<P::ServiceError>,
+              S::Error: Into<P::ServiceError>
     {
         let new_service = Arc::new(new_service);
         self.bind_with_handle(move |_| new_service.clone())
@@ -157,10 +158,12 @@ impl<Kind, P> TcpServer<Kind, P> where
               P::ServiceRequest: 'static,
               S::Request: From<P::ServiceRequest>,
               S::Response: Into<P::ServiceResponse>,
-              S::Error: Into<P::ServiceError>,
+              S::Error: Into<P::ServiceError>
     {
-        self.bind_with_handle(new_service).expect("failed to bind server")
-            .run().expect("error running server")
+        self.bind_with_handle(new_service)
+            .expect("failed to bind server")
+            .run()
+            .expect("error running server")
     }
 
     /// Bind this server to its configured address, returning the instance.
@@ -173,7 +176,8 @@ impl<Kind, P> TcpServer<Kind, P> where
     /// actually bound, configure further execution options, etc. The returned
     /// server supports two methods, `run` and `run_until` which execute the
     /// server to completion and execute with a shutdown signal, respectively.
-    pub fn bind_with_handle<F, S>(&self, new_service: F)
+    pub fn bind_with_handle<F, S>(&self,
+                                  new_service: F)
                                   -> io::Result<TcpServerInstance<Kind, P, S>>
         where F: Fn(&Handle) -> S + Send + Sync + 'static,
               S: NewService + Send + Sync + 'static,
@@ -183,20 +187,20 @@ impl<Kind, P> TcpServer<Kind, P> where
               P::ServiceRequest: 'static,
               S::Request: From<P::ServiceRequest>,
               S::Response: Into<P::ServiceResponse>,
-              S::Error: Into<P::ServiceError>,
+              S::Error: Into<P::ServiceError>
     {
         let core = try!(Core::new());
         let handle = core.handle();
         let listener = try!(listener(&self.addr, self.threads, &handle));
         Ok(TcpServerInstance {
-            core: core,
-            listener: listener,
-            new_service: Arc::new(new_service),
-            _kind: PhantomData,
-            proto: self.proto.clone(),
-            threads: self.threads,
-            shutdown_timeout: Duration::new(1, 0),
-        })
+               core: core,
+               listener: listener,
+               new_service: Arc::new(new_service),
+               _kind: PhantomData,
+               proto: self.proto.clone(),
+               threads: self.threads,
+               shutdown_timeout: Duration::new(1, 0),
+           })
     }
 }
 
@@ -209,7 +213,7 @@ impl<Kind, P, S> TcpServerInstance<Kind, P, S>
           P::ServiceRequest: 'static,
           S::Request: From<P::ServiceRequest>,
           S::Response: Into<P::ServiceResponse>,
-          S::Error: Into<P::ServiceError>,
+          S::Error: Into<P::ServiceError>
 {
     /// Returns the local address that this server is bound to.
     pub fn local_addr(&self) -> io::Result<SocketAddr> {
@@ -259,30 +263,35 @@ impl<Kind, P, S> TcpServerInstance<Kind, P, S>
     /// Once the `shutdown_timeout` elapses or all active connections are
     /// cleaned out then this method will return.
     pub fn run_until<F>(mut self, shutdown_signal: F) -> io::Result<()>
-        where F: Future<Item = (), Error = ()> + Send + 'static,
+        where F: Future<Item = (), Error = ()> + Send + 'static
     {
         let shutdown_signal = shutdown_signal.shared();
         let addr = try!(self.local_addr());
 
-        let threads = (0..self.threads - 1).map(|i| {
-            let new_service = self.new_service.clone();
-            let shutdown = shutdown_signal.clone();
-            let workers = self.threads;
-            let timeout = self.shutdown_timeout;
-            let proto = self.proto.clone();
+        let threads = (0..self.threads - 1)
+            .map(|i| {
+                let new_service = self.new_service.clone();
+                let shutdown = shutdown_signal.clone();
+                let workers = self.threads;
+                let timeout = self.shutdown_timeout;
+                let proto = self.proto.clone();
 
-            thread::Builder::new().name(format!("worker{}", i)).spawn(move || {
-                let mut core = Core::new().unwrap();
-                let handle = core.handle();
-                let listener = listener(&addr, workers, &handle).unwrap();
-                serve(&mut core,
-                      &*proto,
-                      listener,
-                      &*new_service,
-                      shutdown,
-                      timeout)
-            }).unwrap()
-        }).collect::<Vec<_>>();
+                thread::Builder::new()
+                    .name(format!("worker{}", i))
+                    .spawn(move || {
+                        let mut core = Core::new().unwrap();
+                        let handle = core.handle();
+                        let listener = listener(&addr, workers, &handle).unwrap();
+                        serve(&mut core,
+                              &*proto,
+                              listener,
+                              &*new_service,
+                              shutdown,
+                              timeout)
+                    })
+                    .unwrap()
+            })
+            .collect::<Vec<_>>();
 
         try!(serve(&mut self.core,
                    &*self.proto,
@@ -304,7 +313,8 @@ fn serve<P, Kind, F, S, A>(core: &mut Core,
                            listener: TcpListener,
                            new_service: F,
                            shutdown: A,
-                           shutdown_timeout: Duration) -> io::Result<()>
+                           shutdown_timeout: Duration)
+                           -> io::Result<()>
     where P: BindServer<Kind, TcpStream>,
           F: Fn(&Handle) -> S,
           S: NewService + Send + Sync,
@@ -315,34 +325,38 @@ fn serve<P, Kind, F, S, A>(core: &mut Core,
           S::Request: From<P::ServiceRequest>,
           S::Response: Into<P::ServiceResponse>,
           S::Error: Into<P::ServiceError>,
-          A: Future,
+          A: Future
 {
 
     // Mini future to track the number of active services
     let info = Rc::new(RefCell::new(Info {
-        active: 0,
-        blocker: None,
-    }));
+                                        active: 0,
+                                        blocker: None,
+                                    }));
 
     let handle = core.handle();
     let new_service = new_service(&handle);
     let info2 = info.clone();
-    let server = listener.incoming().for_each(move |(socket, _)| {
-        // Create the service
-        info2.borrow_mut().active += 1;
-        let service = NotifyService {
-            inner: try!(new_service.new_service()),
-            info: Rc::downgrade(&info2),
-        };
+    let server = listener
+        .incoming()
+        .for_each(move |(socket, _)| {
+            // Create the service
+            info2.borrow_mut().active += 1;
+            let service = NotifyService {
+                inner: try!(new_service.new_service()),
+                info: Rc::downgrade(&info2),
+            };
 
-        // Bind it!
-        binder.bind_server(&handle, socket, WrapService {
-            inner: service,
-            _marker: PhantomData,
+            // Bind it!
+            binder.bind_server(&handle,
+                               socket,
+                               WrapService {
+                                   inner: service,
+                                   _marker: PhantomData,
+                               });
+
+            Ok(())
         });
-
-        Ok(())
-    });
 
     let shutdown = shutdown.then(|_| Ok(()));
 
@@ -373,9 +387,7 @@ fn serve<P, Kind, F, S, A>(core: &mut Core,
     }
 }
 
-fn listener(addr: &SocketAddr,
-            workers: usize,
-            handle: &Handle) -> io::Result<TcpListener> {
+fn listener(addr: &SocketAddr, workers: usize, handle: &Handle) -> io::Result<TcpListener> {
     let listener = match *addr {
         SocketAddr::V4(_) => try!(net2::TcpBuilder::new_v4()),
         SocketAddr::V6(_) => try!(net2::TcpBuilder::new_v6()),
@@ -383,9 +395,9 @@ fn listener(addr: &SocketAddr,
     try!(configure_tcp(workers, &listener));
     try!(listener.reuse_address(true));
     try!(listener.bind(addr));
-    listener.listen(1024).and_then(|l| {
-        TcpListener::from_listener(l, addr, handle)
-    })
+    listener
+        .listen(1024)
+        .and_then(|l| TcpListener::from_listener(l, addr, handle))
 }
 
 #[cfg(unix)]
@@ -469,19 +481,19 @@ impl<S, Request, Response, Error> Service for WrapService<S, Request, Response, 
     where S: Service,
           S::Request: From<Request>,
           S::Response: Into<Response>,
-          S::Error: Into<Error>,
+          S::Error: Into<Error>
 {
     type Request = Request;
     type Response = Response;
     type Error = Error;
     type Future = Then<S::Future,
-                       Result<Response, Error>,
-                       fn(Result<S::Response, S::Error>) -> Result<Response, Error>>;
+         Result<Response, Error>,
+         fn(Result<S::Response, S::Error>) -> Result<Response, Error>>;
 
     fn call(&self, req: Request) -> Self::Future {
         fn change_types<A, B, C, D>(r: Result<A, B>) -> Result<C, D>
             where A: Into<C>,
-                  B: Into<D>,
+                  B: Into<D>
         {
             match r {
                 Ok(e) => Ok(e.into()),

@@ -34,10 +34,8 @@ pub struct StreamingMultiplex<B>(B);
 /// Additional transport details relevant to streaming, multiplexed protocols.
 ///
 /// All methods added in this trait have default implementations.
-pub trait Transport<ReadBody>: 'static +
-    Stream<Error = io::Error> +
-    Sink<SinkError = io::Error>
-{
+pub trait Transport<ReadBody>
+    : 'static + Stream<Error = io::Error> + Sink<SinkError = io::Error> {
     /// Allow the transport to do miscellaneous work (e.g., sending ping-pong
     /// messages) that is not directly connected to sending or receiving frames.
     ///
@@ -66,10 +64,11 @@ pub trait Transport<ReadBody>: 'static +
     }
 }
 
-impl<T, C, ReadBody> Transport<ReadBody> for old_io::Framed<T,C>
+impl<T, C, ReadBody> Transport<ReadBody> for old_io::Framed<T, C>
     where T: old_io::Io + 'static,
-          C: old_io::Codec + 'static,
-{}
+          C: old_io::Codec + 'static
+{
+}
 
 impl<T, C, ReadBody> Transport<ReadBody> for new_io::codec::Framed<T,C>
     where T: new_io::AsyncRead + new_io::AsyncWrite + 'static,

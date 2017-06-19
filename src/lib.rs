@@ -172,7 +172,7 @@
 //! ```
 
 #![doc(html_root_url = "https://docs.rs/tokio-proto/0.1")]
-#![deny(warnings, missing_docs, missing_debug_implementations)]
+#![deny(warnings, missing_docs)]
 #![allow(deprecated)] // TODO remove this
 
 extern crate net2;
@@ -272,8 +272,8 @@ pub trait BindClient<Kind, T: 'static>: 'static {
 
     /// The bound service.
     type BindClient: Service<Request = Self::ServiceRequest,
-                             Response = Self::ServiceResponse,
-                             Error = Self::ServiceError>;
+            Response = Self::ServiceResponse,
+            Error = Self::ServiceError>;
 
     /// Bind an I/O object as a service.
     fn bind_client(&self, handle: &Handle, io: T) -> Self::BindClient;

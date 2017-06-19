@@ -45,7 +45,8 @@ impl<T> FrameBuf<T> {
     pub fn with_capacity(capacity: usize) -> FrameBuf<T> {
         assert!(capacity < MAX_CAPACITY,
                 "requested frame buffer capacity too large; max={}; requested={}",
-                MAX_CAPACITY, capacity);
+                MAX_CAPACITY,
+                capacity);
 
         let inner = UnsafeCell::new(Inner::with_capacity(capacity));
         FrameBuf { inner: Rc::new(inner) }
@@ -151,8 +152,7 @@ impl<T> FrameDeque<T> {
     }
 
     pub fn clear(&mut self) {
-        while let Some(_) = self.pop() {
-        }
+        while let Some(_) = self.pop() {}
     }
 
     pub fn len(&self) -> usize {
@@ -203,9 +203,9 @@ impl<T> Inner<T> {
             let idx = block.len();
 
             block.push(Slot {
-                next: ptr::null_mut(),
-                val: None,
-            });
+                           next: ptr::null_mut(),
+                           val: None,
+                       });
 
             Some(&mut block[idx])
         }
@@ -239,7 +239,7 @@ impl<T> Inner<T> {
 
 #[cfg(test)]
 mod test {
-    use super::{FrameBuf};
+    use super::FrameBuf;
 
     #[test]
     fn test_capacity() {

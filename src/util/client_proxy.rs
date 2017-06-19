@@ -26,9 +26,7 @@ pub struct ClientProxy<R, S, E> {
 
 impl<R, S, E> Clone for ClientProxy<R, S, E> {
     fn clone(&self) -> Self {
-        ClientProxy {
-            tx: RefCell::new(self.tx.borrow().clone()),
-        }
+        ClientProxy { tx: RefCell::new(self.tx.borrow().clone()) }
     }
 }
 /// Response future returned from a client
@@ -73,8 +71,7 @@ impl<R, S, E: From<io::Error>> Service for ClientProxy<R, S, E> {
         // into a BrokenPipe, which conveys the proper error.
         // NOTE: If Service changes to have some sort of `try_call`, it'd
         // probably be more appropriate to return the Request.
-        let _ = mpsc::UnboundedSender::send(&mut self.tx.borrow_mut(),
-                                            Ok((request, tx)));
+        let _ = mpsc::UnboundedSender::send(&mut self.tx.borrow_mut(), Ok((request, tx)));
 
         Response { inner: rx }
     }
@@ -83,7 +80,7 @@ impl<R, S, E: From<io::Error>> Service for ClientProxy<R, S, E> {
 impl<R, S, E> fmt::Debug for ClientProxy<R, S, E>
     where R: fmt::Debug,
           S: fmt::Debug,
-          E: fmt::Debug,
+          E: fmt::Debug
 {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "ClientProxy {{ ... }}")
@@ -91,7 +88,7 @@ impl<R, S, E> fmt::Debug for ClientProxy<R, S, E>
 }
 
 impl<T, E> Future for Response<T, E>
-    where E: From<io::Error>,
+    where E: From<io::Error>
 {
     type Item = T;
     type Error = E;
@@ -111,7 +108,7 @@ impl<T, E> Future for Response<T, E>
 
 impl<T, E> fmt::Debug for Response<T, E>
     where T: fmt::Debug,
-          E: fmt::Debug,
+          E: fmt::Debug
 {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "Response {{ ... }}")

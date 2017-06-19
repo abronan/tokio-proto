@@ -51,8 +51,7 @@ impl<S: Sink> BufferOne<S> {
             }
 
             // Unpark any pending tasks
-            self.task.take()
-                .map(|t| t.unpark());
+            self.task.take().map(|t| t.unpark());
         }
 
         Ok(Async::Ready(()))
@@ -60,7 +59,9 @@ impl<S: Sink> BufferOne<S> {
 }
 
 // Forwarding impl of Stream from the underlying sink
-impl<S> Stream for BufferOne<S> where S: Sink + Stream {
+impl<S> Stream for BufferOne<S>
+    where S: Sink + Stream
+{
     type Item = S::Item;
     type Error = S::Error;
 
@@ -104,7 +105,7 @@ impl<S: Sink> Sink for BufferOne<S> {
 
 impl<S> fmt::Debug for BufferOne<S>
     where S: Sink + fmt::Debug,
-          S::SinkItem: fmt::Debug,
+          S::SinkItem: fmt::Debug
 {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         f.debug_struct("BufferOne")
